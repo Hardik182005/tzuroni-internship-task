@@ -17,6 +17,14 @@
 
 ---
 
+## 🎬 Demo Video
+
+**[Watch the full demo walkthrough here](https://www.youtube.com/watch?v=H3-0SYPM1ck)**
+
+This video walks through the architecture, a live end-to-end multi-agent pipeline run (weather ingestion → prediction → risk sizing → trade execution → Telegram alert), and the Streamlit dashboard.
+
+---
+
 ## 🏛️ System Architecture
 
 AETHER deploys a modular, asynchronous architecture combining live meteorological REST feeds, news and social sentiment scrapers, and Polymarket order book models. The core is powered by **10 specialized Hermes Agents** communicating over a unified SQLite + SQLAlchemy database layer.
@@ -144,19 +152,34 @@ docker-compose up --build -d
 - **FastAPI REST API Docs**: Open `http://localhost:8000/docs`
 
 ### 3. Run Locally (Standard Python)
+
+**a. Install dependencies**
 ```bash
-# Install dependencies
 pip install -r requirements.txt
+```
 
-# Start the FastAPI backend API
-uvicorn app.database.connection:app --port 8000
+**b. Start the FastAPI backend API** (in its own terminal — keep it running)
+```bash
+uvicorn app.database.connection:app --host 0.0.0.0 --port 8000 --reload
+```
+- REST API docs: `http://localhost:8000/docs`
+- The dashboard's "Run Multi-Agent Pipeline" button calls `POST http://localhost:8000/pipeline/run` on this backend, so it must be running for that button to work.
 
-# Start the Streamlit frontend UI
-streamlit run app/dashboard/main.py
+**c. Start the Streamlit frontend UI** (in a second terminal)
+```bash
+streamlit run app/dashboard/main.py --server.port 8501
+```
+- Dashboard: `http://localhost:8501`
 
-# Manually trigger a pipeline run
+**d. Manually trigger a pipeline run** (optional — in a third terminal, or via the dashboard button once the API is up)
+```bash
 python scripts/run_pipeline.py
 ```
+This runs the full Supervisor → Weather Intelligence → Local Research → News Research → Prediction → Risk Management → Execution → Portfolio → Hedging chain for every city in `TRADING_CITIES` (`.env`), placing paper trades and sending a Telegram alert on each fill. Logs are written to `pipeline_execution.log` in the project root as well as stdout.
+
+**On Windows**, run each command in its own PowerShell/terminal tab so the API and Streamlit stay up simultaneously. If you hit `UnicodeEncodeError` in the console from emoji/unicode in log messages, it's a harmless Windows console encoding quirk — the pipeline still completes and all data is still written to the DB.
+
+To stop either service, press `Ctrl+C` in its terminal.
 
 ---
 
